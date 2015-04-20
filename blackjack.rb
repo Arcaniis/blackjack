@@ -40,37 +40,17 @@ def deal_cards(game_deck, dealer_hand, player_hand)
 end
 
 
-def dealer_value(dealer_hand, value_table)
-  dealer_value = 0
-  dealer_hand.each do |card|
-    dealer_value += value_table[card]
+def hand_value(hand, value_table)
+  value = 0
+  hand.each do |card|
+    value += value_table[card]
   end
-  dealer_value
+  value
 end
 
 
-def player_value(player_hand, value_table)
-  player_value = 0
-  player_hand.each do |card|
-    player_value += value_table[card]
-  end
-  player_value
-end
-
-
-def display_dealer_hand(dealer_value, dealer_hand)
-  say("Dealer shows #{dealer_value}: #{dealer_hand.to_s}")
-end
-
-
-def display_player_hand(player_value, player_hand)
-  say("Player shows #{player_value}: #{player_hand.join(" ")}")
-end
-
-def dealer_hits(game_deck, dealer_hand)
-  card_dealt = rand(game_deck.count)
-  dealer_hand << game_deck[card_dealt]
-  game_deck.delete_at(card_dealt)
+def display_hand(name, hand_value, hand)
+  say("#{name} shows #{hand_value}: #{hand.join(" ")}")
 end
 
 
@@ -82,14 +62,22 @@ def hit?
   hit
 end
 
-def player_hits(game_deck, player_hand)
-  card_dealt = rand(game_deck.count)
-  player_hand << game_deck[card_dealt]
-  game_deck.delete_at(card_dealt)
+
+def take_hit(hand, deck=game_deck)
+  card_dealt = rand(deck.count)
+  hand << deck[card_dealt]
+  deck.delete_at(card_dealt)
 end
 
-def modify_ace_value
 
+def modify_ace_value(hand, value)
+  hand.each do |card|
+    if card =~ /\|A.\|/
+      value -= 10
+      card.gsub!(/[A]/, '-A' )
+      break
+    end
+  end
 end
 
 
@@ -100,34 +88,54 @@ player_hand = []
 value_table = {'|2C|' => 2, '|3C|' => 3, '|4C|' => 4, '|5C|' => 5, '|6C|' => 6,
               '|7C|' => 7, '|8C|' => 8, '|9C|' => 9, '|10C|' => 10,
               '|JC|' => 10, '|QC|' => 10, '|KC|' => 10, '|AC|' => 11,
-              '|2D|' => 2, '|3D|' => 3, '|4D|' => 4, '|5D|' => 5, '|6D|' => 6,
-              '|7D|' => 7, '|8D|' => 8, '|9D|' => 9, '|10D|' => 10,
-              '|JD|' => 10, '|QD|' => 10, '|KD|' => 10, '|AD|' => 11,
+              '|-AC|' => 1, '|2D|' => 2, '|3D|' => 3, '|4D|' => 4, '|5D|' => 5,
+              '|6D|' => 6, '|7D|' => 7, '|8D|' => 8, '|9D|' => 9, '|10D|' => 10,
+              '|JD|' => 10, '|QD|' => 10, '|KD|' => 10, '|AD|' => 11, '|-AD|' => 1,
               '|2S|' => 2, '|3S|' => 3, '|4S|' => 4, '|5S|' => 5, '|6S|' => 6,
-              '|7S|' => 7, '|8S|' => 8, '|9S|' => 9, '|10S|' => 10,
-              '|JS|' => 10, '|QS|' => 10, '|KS|' => 10, '|AS|' => 11,
-              '|2H|' => 2, '|3H|' => 3, '|4H|' => 4, '|5H|' => 5, '|6H|' => 6,
-              '|7H|' => 7, '|8H|' => 8, '|9H|' => 9, '|10H|' => 10,
-              '|JH|' => 10, '|QH|' => 10, '|KH|' => 10, '|AH|' => 11}
+              '|7S|' => 7, '|8S|' => 8, '|9S|' => 9, '|10S|' => 10, '|JS|' => 10,
+              '|QS|' => 10, '|KS|' => 10, '|AS|' => 11, '|-AS|' => 1, '|2H|' => 2,
+              '|3H|' => 3, '|4H|' => 4, '|5H|' => 5, '|6H|' => 6, '|7H|' => 7,
+              '|8H|' => 8, '|9H|' => 9, '|10H|' => 10, '|JH|' => 10, '|QH|' => 10,
+              '|KH|' => 10, '|AH|' => 11, '|-AH|' => 1}
 
 # Initialize deck
 game_deck = initialize_deck
+# gather money info
+
+# take bet
+
 # Deal hands
 deal_cards(game_deck, dealer_hand, player_hand)
 # Display dealer's hand (w/ hidden) and player's hand. Include value of player.
 say("Dealer shows: 'HIDDEN' / #{dealer_hand[1]}")
-display_player_hand(player_value(player_hand, value_table), player_hand)
-# Check for BlackJack
+display_hand('Player', hand_value(player_hand, value_table), player_hand)
+# Check for player BlackJack
 
 # Ask player if they want to hit
 while hit? == 'y'
-  player_hits(game_deck, player_hand)
-  display_player_hand(player_value(player_hand, value_table), player_hand)
-  player_value(player_hand, value_table) > 21 ? player_bust = true : player_bust = false
+  take_hit(player_hand)
+  hand_value(player_hand, value_table) > 21 ? player_bust = true : player_bust = false
   if player_bust
-    modify_ace_value
+    modify_ace_value(player_hand, hand_value(player_hand, value_table))
   end
-  # Re-check for bust
-  # If bust, game over
+  display_hand('Player', hand_value(player_hand, value_table), player_hand)
+  hand_value(player_hand, value_table) > 21 ? player_bust = true : player_bust = false
+  if hand_value(player_hand, value_table) > 21
+    puts "BUST!"
+    #modify money
+    # Play Again?
+    break
+  end
 end
+# Check for dealer blackjack
+
+# dealer hits/ or stays
+
+# compare hand values
+
+#determine winner
+
+# modify money
+
+# play again?
 
