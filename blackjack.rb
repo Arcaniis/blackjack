@@ -58,17 +58,12 @@ def player_value(player_hand, value_table)
 end
 
 
-def display_dealer_hand(dealer_hand, value_table)
-  dealer_value = 0
-  dealer_hand.each do |card|
-    dealer_value += value_table[card]
-  end
-  
+def display_dealer_hand(dealer_value, dealer_hand)
   say("Dealer shows #{dealer_value}: #{dealer_hand.to_s}")
 end
 
 
-def display_player_hand(player_value(player_hand, value_table), player_hand)
+def display_player_hand(player_value, player_hand)
   say("Player shows #{player_value}: #{player_hand.join(" ")}")
 end
 
@@ -91,12 +86,6 @@ def player_hits(game_deck, player_hand)
   card_dealt = rand(game_deck.count)
   player_hand << game_deck[card_dealt]
   game_deck.delete_at(card_dealt)
-end
-
-
-
-def check_bust
-
 end
 
 def modify_ace_value
@@ -127,15 +116,17 @@ game_deck = initialize_deck
 deal_cards(game_deck, dealer_hand, player_hand)
 # Display dealer's hand (w/ hidden) and player's hand. Include value of player.
 say("Dealer shows: 'HIDDEN' / #{dealer_hand[1]}")
-#display_player_hand(player_hand, value_table)
+display_player_hand(player_value(player_hand, value_table), player_hand)
 # Check for BlackJack
 
 # Ask player if they want to hit
 while hit? == 'y'
   player_hits(game_deck, player_hand)
-  #display_player_hand(player_hand, value_table)
-  # Check for bust
-  # If bust, try to modify an ace value
+  display_player_hand(player_value(player_hand, value_table), player_hand)
+  player_value(player_hand, value_table) > 21 ? player_bust = true : player_bust = false
+  if player_bust
+    modify_ace_value
+  end
   # Re-check for bust
   # If bust, game over
 end
